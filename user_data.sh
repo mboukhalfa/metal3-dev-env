@@ -45,12 +45,49 @@ EOF
     fi
 }
 
+install_binaries() {
+  if [ "$OS_TYPE" = "centos" ] ; then
+cat << EOF
+yum_repos:
+    kubernetes:
+        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        enabled: 1
+        gpgcheck: 1
+        repo_gpgcheck: 1
+        gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+runcmd:
+  # Install updates
+  - yum check-update
+
+  # Install docker
+  - yum install -y yum-utils device-mapper-persistent-data lvm2
+  - yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  - yum install docker-ce docker-ce-cli containerd.io -y
+  - usermod -aG docker metal3
+  - systemctl start docker
+  - systemctl enable docker
+
+  # Install kubernetes
+  - setenforce 0
+  - sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+  - yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+  - systemctl enable --now kubelet
+  - kubeadm init --ignore-preflight-errors=all
+
+# Useful for troubleshooting cloud-init issues
+output: {all: '| tee -a /var/log/cloud-init-output.log'}
+EOF
+  fi
+}
+
 user_data_secret() {
   {
     printf "#cloud-config\n\nssh_authorized_keys:\n  - "
     cat "${SSH_PUB_KEY}"
     printf "\n"
     network_config_files
+    install_binaries
   } > .userdata.tmp
 cat << EOF
 apiVersion: v1
