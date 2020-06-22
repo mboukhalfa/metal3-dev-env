@@ -42,7 +42,7 @@
     - verify
     - move
     - move_cleanup
-  when: v1aX_integration_test_action == "pivoting"  
+  when: v1aX_integration_test_action == "pivoting"
 
 - name: "{{ CAPI_VERSION }} cluster deprovisioning"
   include: deprovision_cluster.yml
@@ -77,3 +77,7 @@
     - deprovision_cluster
     - cleanup
   when: v1aX_integration_test_action == "feature_test_deprovisioning"
+
+- name: Node unhealthy
+  include: remediation_unhealthy_test.yml
+  when: v1aX_integration_test_action == "remediation-unhealthy_test"
