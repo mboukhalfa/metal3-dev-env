@@ -117,8 +117,8 @@ configMapGenerator:
   - DHCP_RANGE=$CLUSTER_DHCP_RANGE
   - DEPLOY_KERNEL_URL=http://$IRONIC_HOST:6180/images/ironic-python-agent.kernel
   - DEPLOY_RAMDISK_URL=http://$IRONIC_HOST:6180/images/ironic-python-agent.initramfs
-  - IRONIC_ENDPOINT=http://$IRONIC_HOST:6385/v1/
-  - IRONIC_INSPECTOR_ENDPOINT=http://$IRONIC_HOST:5050/v1/
+  - IRONIC_ENDPOINT=https://$IRONIC_HOST:6385/v1/
+  - IRONIC_INSPECTOR_ENDPOINT=https://$IRONIC_HOST:5050/v1/
   - IRONIC_AUTH_STRATEGY=noauth
   - CACHEURL=http://$IRONIC_HOST/images
   - IRONIC_FAST_TRACK=false
@@ -144,16 +144,18 @@ function deploy_kustomization() {
 
 function launch_baremetal_operator() {
     pushd "${BMOPATH}"
+    kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml
+    sleep 120
     
     if [ "${CAPI_VERSION}" != "v1alpha3" ]; then
       kubectl create namespace metal3
     else
-      BMO_CONFIG="${BMOPATH}/deploy/default"
+      BMO_CONFIG="${BMOPATH}/deploy/tls"
       deploy_kustomization
     fi
 
     if [ "${EPHEMERAL_CLUSTER}" == "minikube" ]; then
-      BMO_CONFIG="${BMOPATH}/ironic-deployment/keepalived"
+      BMO_CONFIG="${BMOPATH}/ironic-deployment/keepalived-tls"
       deploy_kustomization
     fi
 
