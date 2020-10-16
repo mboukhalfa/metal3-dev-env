@@ -40,13 +40,13 @@
 #
 # Set the Baremetal Operator repository to clone
 #
-BMOREPO="https://github.com/Nordix/metal3-dev-env.git"
+BMOREPO="https://github.com/Nordix/baremetal-operator.git"
 export BMOREPO="${BMOREPO:-https://github.com/metal3-io/baremetal-operator.git}"
 
 #
 # Set the Baremetal Operator branch to checkout
 #
-export BMOBRANCH="${BMOBRANCH:-master}"
+export BMOBRANCH="${BMOBRANCH:-ironic-TLS-mariadb-test-nam}"
 
 #
 # Set the Cluster Api metal3 provider repository to clone
@@ -66,7 +66,6 @@ export BMOBRANCH="${BMOBRANCH:-master}"
 #
 # Run a local baremetal operator instead of deploying in Kubernetes
 #
-#export BMO_RUN_LOCAL=true
 
 #
 # Run a local CAPI operator instead of deploying in Kubernetes
@@ -164,3 +163,5 @@ export BMOBRANCH="${BMOBRANCH:-master}"
 # Secure Ironic deployment with TLS ("true" or "false")
 export IRONIC_TLS_SETUP="true"
 export IMAGE_OS=Ubuntu
+export CAPM3_VERSION=v1alpha3
+export BMO_RUN_LOCAL=true
