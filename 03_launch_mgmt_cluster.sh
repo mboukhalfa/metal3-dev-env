@@ -201,7 +201,7 @@ EOF
 
   if [ "${EPHEMERAL_CLUSTER}" != "minikube" ]; then
     update_images
-    ${RUN_LOCAL_IRONIC_SCRIPT}
+    #${RUN_LOCAL_IRONIC_SCRIPT}
   else
     # Deploy Ironic using deploy.sh script
 
@@ -252,9 +252,9 @@ function make_bm_hosts() {
 function apply_bm_hosts() {
   pushd "${BMOPATH}"
   list_nodes | make_bm_hosts > "${WORKING_DIR}/bmhosts_crs.yaml"
-  if [ "${EPHEMERAL_CLUSTER}" != "tilt" ]; then
-    kubectl apply -f "${WORKING_DIR}/bmhosts_crs.yaml" -n metal3
-  fi
+  #if [ "${EPHEMERAL_CLUSTER}" != "tilt" ]; then
+  #  kubectl apply -f "${WORKING_DIR}/bmhosts_crs.yaml" -n metal3
+  #fi
   popd
 }
 
