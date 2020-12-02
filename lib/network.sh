@@ -119,8 +119,8 @@ if [[ -n "${EXTERNAL_SUBNET_V4}" ]]; then
   fi
 
   # Calculate DHCP range for baremetal network (20 to 60 is the libvirt dhcp)
-  network_address BAREMETALV4_POOL_RANGE_START "$EXTERNAL_SUBNET_V4" 100
-  network_address BAREMETALV4_POOL_RANGE_END "$EXTERNAL_SUBNET_V4" 200
+  network_address BAREMETALV4_POOL_RANGE_START "$EXTERNAL_SUBNET_V4" 61
+  network_address BAREMETALV4_POOL_RANGE_END "$EXTERNAL_SUBNET_V4" 100
   export BAREMETALV4_POOL_RANGE_START
   export BAREMETALV4_POOL_RANGE_END
 else
