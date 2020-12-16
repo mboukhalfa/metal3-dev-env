@@ -37,7 +37,8 @@
     {% set ns = namespace(index=0) %}
     {% for flavor in flavors %}
       {% set numflavor = lookup('vars', 'num_' + flavor + 's')|default(0)|int %}
-      {% for num in range(0, numflavor) %}
+      {% set node_index = custom_index %}
+      {% for num in range(node_index, numflavor) %}
         {% set ironic_name = ironic_prefix + flavor + "_" + num|string %}
         {% set hostname_format = lookup('vars', flavor + '_hostname_format', default=flavor + '-%d') %}
         {% set hostname = hostname_format % num %}
