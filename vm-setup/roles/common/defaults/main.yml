@@ -24,6 +24,9 @@ flavors:
 # An optional prefix for node names
 ironic_prefix: ""
 
+# Customized index for node names
+custom_index: 50
+
 baremetal_network_cidr_v4: "{{ lookup('env', 'EXTERNAL_SUBNET_V4')|default('', true) }}"
 baremetal_network_cidr_v6: "{{ lookup('env', 'EXTERNAL_SUBNET_V6')|default('', true) }}"
 virsh_dhcp_v4_start: "{{ lookup('env', 'VIRSH_DHCP_V4_START')|default('', true) }}"
