@@ -28,7 +28,6 @@ export MARIADB_HOST_IP="127.0.0.1"
 # Set ironic scalability variables
 export VM_ID=${VM_ID:-1}
 export NUM_VMS=${NUM_VMS:-1}
-#export IRONIC_SCALABILITY_TEST=${IRONIC_SCALABILITY_TEST:-false}
 
 # Additional DNS
 ADDN_DNS=${ADDN_DNS:-}

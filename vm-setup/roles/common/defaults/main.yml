@@ -40,7 +40,6 @@ virsh_dhcp_v4_start: "{{ lookup('env', 'VIRSH_DHCP_V4_START')|default('', true) 
 virsh_dhcp_v4_end: "{{ lookup('env', 'VIRSH_DHCP_V4_END')|default('', true) }}"
 virsh_dhcp_v6_start: "{{ lookup('env', 'VIRSH_DHCP_V6_START')|default('', true) }}"
 virsh_dhcp_v6_end: "{{ lookup('env', 'VIRSH_DHCP_V6_END')|default('', true) }}"
-#scalability: "{{ lookup('env', 'IRONIC_SCALABILITY_TEST')|default('', false) }}"
 
 
 # Set this to `false` if you don't want your vms
