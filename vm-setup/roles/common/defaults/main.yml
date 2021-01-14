@@ -11,7 +11,6 @@ libvirt_nic_model: virtio
 default_disk: 50
 default_memory: 8192
 default_vcpu: 4
-num_nodes: 2
 extradisks: false
 virtualbmc_base_port: 6230
 flavors:
@@ -24,8 +23,16 @@ flavors:
 # An optional prefix for node names
 ironic_prefix: ""
 
+# Ironic scalability vars
+default_vm_id: 1
+default_num_vms: 1
+default_num_nodes: 2
+num_nodes: "{{ lookup('env', 'NUM_NODES')|default(default_num_nodes) }}"
+vm_id_local: "{{ lookup('env', 'VM_ID')|default(default_vm_id) }}"
+num_vms: "{{ lookup('env', 'NUM_VMS')|default(default_num_vms) }}"
+
 # Customized index for node names
-custom_index: 50
+custom_index: "{{ (vm_id_local|int - 1) * (num_nodes)|int }}"
 
 baremetal_network_cidr_v4: "{{ lookup('env', 'EXTERNAL_SUBNET_V4')|default('', true) }}"
 baremetal_network_cidr_v6: "{{ lookup('env', 'EXTERNAL_SUBNET_V6')|default('', true) }}"
@@ -33,6 +40,7 @@ virsh_dhcp_v4_start: "{{ lookup('env', 'VIRSH_DHCP_V4_START')|default('', true) 
 virsh_dhcp_v4_end: "{{ lookup('env', 'VIRSH_DHCP_V4_END')|default('', true) }}"
 virsh_dhcp_v6_start: "{{ lookup('env', 'VIRSH_DHCP_V6_START')|default('', true) }}"
 virsh_dhcp_v6_end: "{{ lookup('env', 'VIRSH_DHCP_V6_END')|default('', true) }}"
+#scalability: "{{ lookup('env', 'IRONIC_SCALABILITY_TEST')|default('', false) }}"
 
 
 # Set this to `false` if you don't want your vms
@@ -49,7 +57,7 @@ ssh_user: root
 # Describe our virtual networks.  These networks will be attached to
 # the vm nodes in the order in which they are defined with the following caveats:
 #   *  The first bridge network defined will be used for pxe booting
-manage_baremetal: 'n'
+manage_baremetal: "{% if vm_id_local == 1 %}y{% else %}n{% endif %}"
 networks:
   - name: provisioning
     bridge: provisioning
@@ -57,11 +65,13 @@ networks:
   - name: baremetal
     bridge: baremetal
     forward_mode: "{% if manage_baremetal == 'y' %}nat{% else %}bridge{% endif %}"
-    address_v4: "{{ baremetal_network_cidr_v4|nthhost(2)|default('', true) }}"
+    address_v4: "{{ baremetal_network_cidr_v4|nthhost(vm_id_local)|default('', true) }}"
     netmask_v4: "{{ baremetal_network_cidr_v4|ipaddr('netmask') }}"
-    dhcp_range_v4:
-      - "{{ virsh_dhcp_v4_start }}"
-      - "{{ virsh_dhcp_v4_end }}"
+#"{% if scalability == 'false' %}
+#    dhcp_range_v4:
+#      - "{{ virsh_dhcp_v4_start }}"
+#      - "{{ virsh_dhcp_v4_end }}"
+#{% endif %}"
     address_v6: "{{ baremetal_network_cidr_v6|nthhost(1)|default('', true) }}"
     prefix_v6: "{{ baremetal_network_cidr_v6|ipaddr('prefix') }}"
     dhcp_range_v6:

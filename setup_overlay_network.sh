@@ -2,6 +2,8 @@
 set -xe
 
 # shellcheck disable=SC1091
+source lib/common.sh
+# shellcheck disable=SC1091
 source lib/network.sh
 
 # Overlay network related variables
@@ -17,9 +19,14 @@ BRIDGE_NAME_PROVISIONING=${BRIDGE_NAME_PROVISIONING:-"provisioning"}
 MTU_SIZE=${MTU_SIZE:-"1450"}
 PORT_ID=${PORT_ID:-"4789"}
 
+#Delete old vxlan configurations
+sudo ip link delete "$VXLAN_NAME_BAREMETAL"
+sudo ip link delete "$VXLAN_NAME_PROVISIONING"
+
 # (Note) Below line outputs IP address of ens3 interface without CIDR notation(i.e 10.201.10.50).
 # in case we will need it.
-ip a | grep ens3 | cut -d " " -f6 | awk 'NR==2{print $1}' | cut -d "/" -f 1
+
+# ip a | grep ens3 | cut -d " " -f6 | awk 'NR==2{print $1}' | cut -d "/" -f 1
 
 # Description:
 # Setup overlay networks (baremetal or provisioning)
@@ -43,10 +50,9 @@ function setup_overlay_network() {
     sudo ip link set "${VXLAN_NAME}" master "${BRIDGE_NAME}"
     sudo ip link set "${VXLAN_NAME}" up
     sudo ip link set dev "${PROVISIONING_INTERFACE}" mtu "${MTU}"
+    sudo ip link set dev ironic-peer mtu "${MTU}"
+    sudo ip link set dev baremetal-nic mtu "${MTU}"
 }
-
-# Delete kind cluster
-kind delete cluster
 
 # Setup baremetal overlay network
 setup_overlay_network "$VXLAN_NAME_BAREMETAL" "$VXLAN_ID_BAREMETAL"  "$MULTICAST_IP_BAREMETAL" "$PORT_ID" \
@@ -55,3 +61,8 @@ setup_overlay_network "$VXLAN_NAME_BAREMETAL" "$VXLAN_ID_BAREMETAL"  "$MULTICAST
 # Setup provisioning overlay network
 setup_overlay_network "$VXLAN_NAME_PROVISIONING" "$VXLAN_ID_PROVISIONING"  "$MULTICAST_IP_PROVISIONING" "$PORT_ID" \
 "$NETWORK_INTERFACE" "$BRIDGE_NAME_PROVISIONING" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
+
+# Delete kind cluster for worker VMs'
+if [ "${VM_ID}" != 1 ]; then
+    sudo kind delete cluster
+fi
