@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -xe
+set -x
 
 # shellcheck disable=SC1091
 source lib/common.sh
@@ -16,8 +16,8 @@ MULTICAST_IP_PROVISIONING=${MULTICAST_IP_PROVISIONING:-"239.1.1.2"}
 NETWORK_INTERFACE=${NETWORK_INTERFACE:-"ens3"}
 BRIDGE_NAME_BAREMETAL=${BRIDGE_NAME_BAREMETAL:-"baremetal"}
 BRIDGE_NAME_PROVISIONING=${BRIDGE_NAME_PROVISIONING:-"provisioning"}
-MTU_SIZE=${MTU_SIZE:-"1450"}
-PORT_ID=${PORT_ID:-"4789"}
+MTU_SIZE=${MTU_SIZE:-"8800"}
+PORT_ID=${PORT_ID:-"47890"}
 
 #Delete old vxlan configurations
 sudo ip link delete "$VXLAN_NAME_BAREMETAL"
