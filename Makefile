@@ -50,4 +50,6 @@ feature_tests_upgrade: setup_env upgrade_test
 
 feature_tests_upgrade_centos: setup_env_ug upgrade_test
 
+scalability: install_requirements configure_host launch_mgmt_cluster
+
 .PHONY: all install_requirements configure_host launch_mgmt_cluster clean delete_mgmt_cluster host_cleanup verify test lint
