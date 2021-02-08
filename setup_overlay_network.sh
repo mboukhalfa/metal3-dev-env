@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -xe
+set -x
 
 # shellcheck disable=SC1091
 source lib/common.sh
@@ -11,13 +11,16 @@ VXLAN_NAME_BAREMETAL=${VXLAN_NAME_BAREMETAL:-"vxlan10"}
 VXLAN_NAME_PROVISIONING=${VXLAN_NAME_PROVISIONING:-"vxlan20"}
 VXLAN_ID_BAREMETAL=${VXLAN_ID_BAREMETAL:-"10"}
 VXLAN_ID_PROVISIONING=${VXLAN_ID_PROVISIONING:-"20"}
-MULTICAST_IP_BAREMETAL=${MULTICAST_IP_BAREMETAL:-"239.1.1.1"}
-MULTICAST_IP_PROVISIONING=${MULTICAST_IP_PROVISIONING:-"239.1.1.2"}
+WORKER_HOST_IP=${WORKER_HOST_IP:-"10.201.10.38"}
+MASTER_HOST_IP=${MASTER_HOST_IP:-"10.201.10.34"}
+#MULTICAST_IP_BAREMETAL=${MULTICAST_IP_BAREMETAL:-"239.1.1.1"}
+#MULTICAST_IP_PROVISIONING=${MULTICAST_IP_PROVISIONING:-"239.1.1.2"}
 NETWORK_INTERFACE=${NETWORK_INTERFACE:-"ens3"}
 BRIDGE_NAME_BAREMETAL=${BRIDGE_NAME_BAREMETAL:-"baremetal"}
 BRIDGE_NAME_PROVISIONING=${BRIDGE_NAME_PROVISIONING:-"provisioning"}
-MTU_SIZE=${MTU_SIZE:-"1450"}
-PORT_ID=${PORT_ID:-"4789"}
+MTU_SIZE=${MTU_SIZE:-"8900"}
+#IRONICENDPOINT_MTU_SIZE=${IRONICENDPOINT_MTU_SIZE:-"8900"}
+PORT_ID=${PORT_ID:-"0"}
 
 #Delete old vxlan configurations
 sudo ip link delete "$VXLAN_NAME_BAREMETAL"
@@ -36,30 +39,41 @@ sudo ip link delete "$VXLAN_NAME_PROVISIONING"
 #   <NETWORK_INTERFACE> <BRIDGE_NAME> <PROVISIONING_INTERFACE> <MTU_SIZE>
 #
 
+if [ "${VM_ID}" == 1 ]; then
+    IP=${IP:-"$WORKER_HOST_IP"}
+else
+    IP=${IP:-"$MASTER_HOST_IP"}
+fi
+
 function setup_overlay_network() {
     local VXLAN_NAME="$1"
     local VXLAN_ID="$2"
-    local MULTICAST_IP="$3"
-    local DESTINATION_PORT="$4"
-    local INTERFACE="$5"
-    local BRIDGE_NAME="$6"
-    local PROVISIONING_INTERFACE="$7"
-    local MTU="$8"
-    
-    sudo ip link add "${VXLAN_NAME}" type vxlan id "${VXLAN_ID}" group "${MULTICAST_IP}" dstport "${DESTINATION_PORT}" dev "${INTERFACE}"
+    local IP="$3"
+    #local MASTER_IP="$4"
+    #local DESTINATION_PORT="$5"
+    local INTERFACE="$4"
+    local BRIDGE_NAME="$5"
+    local PROVISIONING_INTERFACE="$6"
+    local MTU="$7"
+    #local IEMTU="$8"
+    #local VM_ID="$8"
+
+    sudo ip link add "${VXLAN_NAME}" type vxlan id "${VXLAN_ID}" remote "${IP}" dstport 0 dev "${INTERFACE}"
     sudo ip link set "${VXLAN_NAME}" master "${BRIDGE_NAME}"
     sudo ip link set "${VXLAN_NAME}" up
     sudo ip link set dev "${PROVISIONING_INTERFACE}" mtu "${MTU}"
+    sudo ip link set dev "${BRIDGE_NAME_BAREMETAL}" mtu "${MTU}"
+    sudo ip link set dev "${BRIDGE_NAME_PROVISIONING}" mtu "${MTU}"
     sudo ip link set dev ironic-peer mtu "${MTU}"
     sudo ip link set dev baremetal-nic mtu "${MTU}"
 }
 
 # Setup baremetal overlay network
-setup_overlay_network "$VXLAN_NAME_BAREMETAL" "$VXLAN_ID_BAREMETAL"  "$MULTICAST_IP_BAREMETAL" "$PORT_ID" \
-"$NETWORK_INTERFACE" "$BRIDGE_NAME_BAREMETAL" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE" 
+setup_overlay_network "$VXLAN_NAME_BAREMETAL" "$VXLAN_ID_BAREMETAL"  "$IP" \
+"$NETWORK_INTERFACE" "$BRIDGE_NAME_BAREMETAL" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
 
 # Setup provisioning overlay network
-setup_overlay_network "$VXLAN_NAME_PROVISIONING" "$VXLAN_ID_PROVISIONING"  "$MULTICAST_IP_PROVISIONING" "$PORT_ID" \
+setup_overlay_network "$VXLAN_NAME_PROVISIONING" "$VXLAN_ID_PROVISIONING"  "$IP" \
 "$NETWORK_INTERFACE" "$BRIDGE_NAME_PROVISIONING" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
 
 # Delete kind cluster for worker VMs'
