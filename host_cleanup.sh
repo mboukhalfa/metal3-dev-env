@@ -69,3 +69,11 @@ fi
 sudo rm -rf /var/log/libvirt/qemu/*serial0.log*
 
 rm -rf  "${HOME}"/.cluster-api
+
+# Clean up ens3 and floating ips of VMs'
+rm ens3_ip_list.txt vm_ip_list.txt 2> /dev/null
+
+# Remove crs folder in master VM
+if [ "${VM_ID}" == 1 ]; then
+  rm -rf "${HOME}"/bm_crs/
+fi

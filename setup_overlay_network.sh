@@ -7,24 +7,20 @@ source lib/common.sh
 source lib/network.sh
 
 # Overlay network related variables
-VXLAN_NAME_BAREMETAL=${VXLAN_NAME_BAREMETAL:-"vxlan10"}
-VXLAN_NAME_PROVISIONING=${VXLAN_NAME_PROVISIONING:-"vxlan20"}
-VXLAN_ID_BAREMETAL=${VXLAN_ID_BAREMETAL:-"10"}
-VXLAN_ID_PROVISIONING=${VXLAN_ID_PROVISIONING:-"20"}
-WORKER_HOST_IP=${WORKER_HOST_IP:-"10.201.10.38"}
-MASTER_HOST_IP=${MASTER_HOST_IP:-"10.201.10.34"}
+VXLAN_NAME_BAREMETAL=${VXLAN_NAME_BAREMETAL:-"vxlan100"}
+VXLAN_NAME_PROVISIONING=${VXLAN_NAME_PROVISIONING:-"vxlan200"}
+VXLAN_ID_BAREMETAL=${VXLAN_ID_BAREMETAL:-"100"}
+VXLAN_ID_PROVISIONING=${VXLAN_ID_PROVISIONING:-"200"}
+#WORKER_HOST_IP=${WORKER_HOST_IP:-"10.201.10.38"}
+#MASTER_HOST_IP=${MASTER_HOST_IP:-"10.201.10.34"}
 #MULTICAST_IP_BAREMETAL=${MULTICAST_IP_BAREMETAL:-"239.1.1.1"}
 #MULTICAST_IP_PROVISIONING=${MULTICAST_IP_PROVISIONING:-"239.1.1.2"}
 NETWORK_INTERFACE=${NETWORK_INTERFACE:-"ens3"}
 BRIDGE_NAME_BAREMETAL=${BRIDGE_NAME_BAREMETAL:-"baremetal"}
 BRIDGE_NAME_PROVISIONING=${BRIDGE_NAME_PROVISIONING:-"provisioning"}
-MTU_SIZE=${MTU_SIZE:-"8900"}
+MTU_SIZE=${MTU_SIZE:-"8800"}
 #IRONICENDPOINT_MTU_SIZE=${IRONICENDPOINT_MTU_SIZE:-"8900"}
 PORT_ID=${PORT_ID:-"0"}
-
-#Delete old vxlan configurations
-sudo ip link delete "$VXLAN_NAME_BAREMETAL"
-sudo ip link delete "$VXLAN_NAME_PROVISIONING"
 
 # (Note) Below line outputs IP address of ens3 interface without CIDR notation(i.e 10.201.10.50).
 # in case we will need it.
@@ -38,12 +34,6 @@ sudo ip link delete "$VXLAN_NAME_PROVISIONING"
 #   setup_overlay_network <VXLAN_NAME> <VXLAN_ID> <REMOTE_IP> <PORT_ID> \
 #   <NETWORK_INTERFACE> <BRIDGE_NAME> <PROVISIONING_INTERFACE> <MTU_SIZE>
 #
-
-if [ "${VM_ID}" == 1 ]; then
-    IP=${IP:-"$WORKER_HOST_IP"}
-else
-    IP=${IP:-"$MASTER_HOST_IP"}
-fi
 
 function setup_overlay_network() {
     local VXLAN_NAME="$1"
@@ -68,13 +58,41 @@ function setup_overlay_network() {
     sudo ip link set dev baremetal-nic mtu "${MTU}"
 }
 
-# Setup baremetal overlay network
-setup_overlay_network "$VXLAN_NAME_BAREMETAL" "$VXLAN_ID_BAREMETAL"  "$IP" \
-"$NETWORK_INTERFACE" "$BRIDGE_NAME_BAREMETAL" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
+master_ens3_ip=$(cat ens3_ip_list.txt | head -1)
+worker_ens3_ips=$(cat ens3_ip_list.txt | tail -n +2 | tr '\n' ' ')
+vx=$(grep -Eo '[[:alpha:]]+|[0-9]+' <<<"$VXLAN_NAME_BAREMETAL" | head -1)
+vxlan_id_bm=$VXLAN_ID_BAREMETAL
+vxlan_id_prov=$VXLAN_ID_PROVISIONING
 
-# Setup provisioning overlay network
-setup_overlay_network "$VXLAN_NAME_PROVISIONING" "$VXLAN_ID_PROVISIONING"  "$IP" \
-"$NETWORK_INTERFACE" "$BRIDGE_NAME_PROVISIONING" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
+if [ "${VM_ID}" == 1 ]; then
+    for worker_ens3_ip in $worker_ens3_ips; do
+        name_bm=$vx$vxlan_id_bm
+        name_pr=$vx$vxlan_id_prov
+        sudo ip link delete "$name_bm"
+        sudo ip link delete "$name_pr"
+        # Setup baremetal overlay network
+        setup_overlay_network "$name_bm" "$vxlan_id_bm"  "$worker_ens3_ip" \
+        "$NETWORK_INTERFACE" "$BRIDGE_NAME_BAREMETAL" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
+        # Setup provisioning overlay network
+        setup_overlay_network "$name_pr" "$vxlan_id_prov"  "$worker_ens3_ip" \
+        "$NETWORK_INTERFACE" "$BRIDGE_NAME_PROVISIONING" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
+        vxlan_id_bm=$(( $vxlan_id_bm + 1 ))
+        vxlan_id_prov=$(( $vxlan_id_prov + 1 ))
+    done
+else	
+    VXLAN_ID_BAREMETAL=$(( $VM_ID + 98 ))
+    VXLAN_ID_PROVISIONING=$(( $VM_ID + 198 ))
+    name_bm=$vx$VXLAN_ID_BAREMETAL
+    name_pr=$vx$VXLAN_ID_PROVISIONING
+    sudo ip link delete "$name_bm"
+    sudo ip link delete "$name_pr"
+    # Setup baremetal overlay network
+    setup_overlay_network "$name_bm" "$VXLAN_ID_BAREMETAL"  "$master_ens3_ip" \
+    "$NETWORK_INTERFACE" "$BRIDGE_NAME_BAREMETAL" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
+    # Setup provisioning overlay network
+    setup_overlay_network "$name_pr" "$VXLAN_ID_PROVISIONING"  "$master_ens3_ip" \
+    "$NETWORK_INTERFACE" "$BRIDGE_NAME_PROVISIONING" "$CLUSTER_PROVISIONING_INTERFACE" "$MTU_SIZE"
+fi
 
 # Delete kind cluster for worker VMs'
 if [ "${VM_ID}" != 1 ]; then
