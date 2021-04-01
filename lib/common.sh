@@ -406,6 +406,9 @@ function init_minikube() {
 
     # Restart libvirtd
     sudo systemctl restart libvirtd
+
+    # Wait a moment for libvirtd to come up before continuing with other commands
+    sleep 2
 }
 
 #
