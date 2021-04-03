@@ -36,15 +36,25 @@
        - cluster.x-k8s.io/provider="metal3"
     when: CAPM3_VERSION == "v1alpha3"
 
-  - name: Obtain target cluster kubeconfig
-    shell: "kubectl get secrets {{ CLUSTER_NAME }}-kubeconfig -n {{ NAMESPACE }} -o json | jq -r '.data.value'| base64 -d > /tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml"
+  - name: Fetch target cluster kubeconfig
+    community.kubernetes.k8s_info:
+      api_version: v1
+      kind: Secret
+      name: "{{ CLUSTER_NAME }}-kubeconfig"
+      namespace: "{{ NAMESPACE }}"
+    register: secret
+
+  - local_action: 
+      module: copy 
+      content: "{{ secret | json_query('resources[*].data.value') | b64decode}}"
+      dest: "{{ TARGET_KUBECONFIG }}"
 
   - name: Create namespace
     k8s:
       name: "{{ NAMESPACE }}"
       kind: Namespace
       state: present
-      kubeconfig: "/tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml"
+      kubeconfig: "{{ TARGET_KUBECONFIG }}"
 
   # Install BMO
   - name: Install Baremetal Operator
@@ -73,31 +83,33 @@
     shell: "mv {{ BMOPATH }}/ironic-deployment/keepalived/ironic_bmo_configmap.env.orig {{ BMOPATH }}/ironic-deployment/keepalived/ironic_bmo_configmap.env"
 
   - name: Label BMO CRDs in target cluster.
-    shell: 'kubectl --kubeconfig /tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml label crds baremetalhosts.metal3.io {{ item }} --overwrite '
+    shell: 'kubectl --kubeconfig {{ TARGET_KUBECONFIG }} label crds baremetalhosts.metal3.io {{ item }} --overwrite '
     with_items:
       - clusterctl.cluster.x-k8s.io=""
       - cluster.x-k8s.io/provider="metal3"
     when: CAPM3_VERSION == "v1alpha3"
 
   - name: Initialize Provider component in target cluster
-    shell: "clusterctl init --kubeconfig /tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml --core cluster-api:{{ CAPIRELEASE }} --bootstrap kubeadm:{{ CAPIRELEASE }} --control-plane kubeadm:{{ CAPIRELEASE }} --infrastructure metal3:{{ CAPM3RELEASE }} -v 5"
+    shell: "clusterctl init --kubeconfig {{ TARGET_KUBECONFIG }} --core cluster-api:{{ CAPIRELEASE }} --bootstrap kubeadm:{{ CAPIRELEASE }} --control-plane kubeadm:{{ CAPIRELEASE }} --infrastructure metal3:{{ CAPM3RELEASE }} -v 5"
 
   # Check for pods & nodes on the target cluster
-  - name: Check if pods in running state
-    shell: "kubectl get pods -A -o json | jq -r '.items[].status.phase' | grep -v Running"
-    environment:
-      KUBECONFIG: "/tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml"
+  - name: Wait until target cluster Pods are in Running state
+    community.kubernetes.k8s_info:
+      kind: Pod
+      kubeconfig: "{{ TARGET_KUBECONFIG }}"
+      field_selectors:
+        - status.phase=Running
     retries: 150
     delay: 20
-    register: target_running_pods
+    register: running_pods
     failed_when: >
-      (target_running_pods.stderr != "") or
-      (target_running_pods.rc > 1) or
-      (target_running_pods.stdout != "")
-    until: target_running_pods.stdout == ""
+      (running_pods.stderr != "") or
+      (running_pods.rc > 1) or
+      (running_pods.stdout != "")
+    until: running_pods.stdout == ""
 
   - name: Pivot objects to target cluster
-    shell: "clusterctl move --to-kubeconfig /tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml -n {{ NAMESPACE }} -v 10"
+    shell: "clusterctl move --to-kubeconfig {{ TARGET_KUBECONFIG }} -n {{ NAMESPACE }} -v 10"
 
   - name: Check if machines become running.
     shell: |
@@ -106,7 +118,7 @@
         | .metadata.name ] | length'
     register: provisioned_machines
     environment:
-      KUBECONFIG: "/tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml"
+      KUBECONFIG: "{{ TARGET_KUBECONFIG }}"
     retries: 50
     delay: 20
     until: provisioned_machines.stdout == NUMBER_OF_BMH
@@ -118,7 +130,7 @@
         | .metadata.name ] | length'
     register: provisioned_m3m_machines
     environment:
-      KUBECONFIG: "/tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml"
+      KUBECONFIG: "{{ TARGET_KUBECONFIG }}"
     retries: 10
     delay: 20
     until: provisioned_m3m_machines.stdout == NUMBER_OF_BMH
@@ -129,7 +141,7 @@
         | select (.status.provisioning.state == "provisioned")
         | .metadata.name ] | length'
     environment:
-      KUBECONFIG: "/tmp/kubeconfig-{{ CLUSTER_NAME }}.yaml"
+      KUBECONFIG: "{{ TARGET_KUBECONFIG }}"
     register: provisioned_bmh
     retries: 10
     delay: 20
