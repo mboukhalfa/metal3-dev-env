@@ -54,11 +54,11 @@ spec:
         checksumType: ${ IMAGE_CHECKSUM_TYPE }
         format: ${ IMAGE_FORMAT }
 {% if CAPM3_VERSION != "v1alpha3" %}
-{% with METAL3DATATEMPLATE_NAME=${ CLUSTER_NAME }-workers-template %}
       dataTemplate:
-        name: {{ METAL3DATATEMPLATE_NAME }}
+        name: ${ CLUSTER_NAME }-workers-template
 ---
-{% include metal3datatemplate-spec-template.yaml %}
+{% with template_type="workers" %}
+{% include "metal3datatemplate-template.yaml" %}
 {% endwith %}
 {% endif %}
 ---

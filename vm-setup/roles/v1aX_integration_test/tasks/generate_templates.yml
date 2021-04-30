@@ -9,7 +9,7 @@
   - name: Set fact for NIC names for the first BMH found
     set_fact:
       # We assume that the NIC names for different nodes are the same.
-      bmh_nic_names: "{{ bmhs | first | bmh_nic_names }}"
+      bmh_nic_names: "{{ bmhs['resources'] | first | bmh_nic_names }}"
 
   - name: Create a temporary manifest directory if it does not exist
     file:

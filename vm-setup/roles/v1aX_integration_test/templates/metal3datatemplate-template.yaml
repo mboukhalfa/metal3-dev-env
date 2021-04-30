@@ -1,7 +1,7 @@
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: Metal3DataTemplate
 metadata:
-  name: {{ METAL3DATATEMPLATE_NAME }}
+  name: ${ CLUSTER_NAME }-{{ template_type }}-template
 spec:
   clusterName: ${ CLUSTER_NAME }
   metaData:
@@ -27,20 +27,20 @@ spec:
           macAddress:
             fromHostInterface: {{ nic_name }}
 {% endfor %}
-{% if EXTERNAL_VLAN_ID != None %}
+{% if EXTERNAL_VLAN_ID != "" %}
       vlans:
         - id: "vlan{{ EXTERNAL_VLAN_ID }}"
           mtu: 1500
           macAddress:
-            fromHostInterface: {% bmh_nic_names | first %}
+            fromHostInterface: {{ bmh_nic_names | first }}
           vlanID: {{ EXTERNAL_VLAN_ID }}
-          vlanLink: {% bmh_nic_names | first %}
+          vlanLink: {{ bmh_nic_names | first }}
 {% endif %}
     networks:
 {% if IP_STACK == 'v4' or IP_STACK == 'v4v6' %}
       ipv4:
         - id: baremetalv4
-          link: {% IF EXTERNAL_VLAN_ID != None %}{{ bmh_nic_names[1] }}{% else %}vlan{{ EXTERNAL_VLAN_ID }}{% endif %}
+          link: "{% if EXTERNAL_VLAN_ID == "" %}{{ bmh_nic_names[1] }}{% else %}vlan{{ EXTERNAL_VLAN_ID }}{% endif %}"
           ipAddressFromIPPool: baremetalv4-pool
           routes:
             - network: 0.0.0.0
@@ -51,7 +51,7 @@ spec:
 {% if IP_STACK == 'v6' or IP_STACK == 'v4v6'%}
       ipv6:
         - id: baremetalv6
-          link: {% IF EXTERNAL_VLAN_ID != None %}enp2s0{% else %}vlan{{ EXTERNAL_VLAN_ID }}{% endif %}
+          link: "{% if EXTERNAL_VLAN_ID == "" %}{{ bmh_nic_names[1] }}{% else %}vlan{{ EXTERNAL_VLAN_ID }}{% endif %}"
           ipAddressFromIPPool: baremetalv6-pool
           routes:
             - network: 0::0

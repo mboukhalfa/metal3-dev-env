@@ -63,10 +63,10 @@ spec:
         checksumType: ${ IMAGE_CHECKSUM_TYPE }
         format: ${ IMAGE_FORMAT }
 {% if CAPM3_VERSION != "v1alpha3" %}
-{% with METAL3DATATEMPLATE_NAME=${ CLUSTER_NAME }-controlplane-template %}
       dataTemplate:
-        name: {{ METAL3DATATEMPLATE_NAME }}
+        name: ${ CLUSTER_NAME }-controlplane-template
 ---
+{% with template_type="controlplane" %}
 {% include "metal3datatemplate-template.yaml" %}
 {% endwith %}
 {% endif %}
