@@ -106,7 +106,7 @@ export RUN_LOCAL_IRONIC_SCRIPT="${BMOPATH}/tools/run_local_ironic.sh"
 
 export CAPM3PATH="${CAPM3PATH:-${M3PATH}/cluster-api-provider-metal3}"
 export CAPM3_BASE_URL="${CAPM3_BASE_URL:-metal3-io/cluster-api-provider-metal3}"
-export CAPM3REPO="${CAPM3REPO:-https://github.com/${CAPM3_BASE_URL}}"
+export CAPM3REPO="${CAPM3REPO:-https://github.com/Nordix/cluster-api-provider-metal3}"
 
 export IPAMPATH="${IPAMPATH:-${M3PATH}/ip-address-manager}"
 export IPAM_BASE_URL="${IPAM_BASE_URL:-metal3-io/ip-address-manager}"
@@ -118,13 +118,13 @@ CAPI_BASE_URL="${CAPI_BASE_URL:-kubernetes-sigs/cluster-api}"
 # Required CAPI version
 export CAPI_VERSION="v1alpha3"
 if [ "${CAPM3_VERSION}" == "v1alpha4" ]; then
-  CAPM3BRANCH="${CAPM3BRANCH:-master}"
+  CAPM3BRANCH="${CAPM3BRANCH:-ironic-ca-cert-moshiur}"
 else
   CAPM3BRANCH="${CAPM3BRANCH:-release-0.3}"
 fi
 
-BMOREPO="${BMOREPO:-https://github.com/metal3-io/baremetal-operator.git}"
-BMOBRANCH="${BMOBRANCH:-master}"
+BMOREPO="${BMOREPO:-https://github.com/Nordix/baremetal-operator.git}"
+BMOBRANCH="${BMOBRANCH:-cert-manager-tls-moshiur}"
 FORCE_REPO_UPDATE="${FORCE_REPO_UPDATE:-false}"
 
 BMO_RUN_LOCAL="${BMO_RUN_LOCAL:-false}"
@@ -160,7 +160,7 @@ export IRONIC_INSPECTOR_IMAGE=${IRONIC_INSPECTOR_IMAGE:-"quay.io/metal3-io/ironi
 export IRONIC_DATA_DIR="$WORKING_DIR/ironic"
 export IRONIC_IMAGE_DIR="$IRONIC_DATA_DIR/html/images"
 export IRONIC_KEEPALIVED_IMAGE=${IRONIC_KEEPALIVED_IMAGE:-"quay.io/metal3-io/keepalived"}
-
+export IRONIC_NAMESPACE=${IRONIC_NAMESPACE:-"capm3-system"}
 # Baremetal operator image
 export BAREMETAL_OPERATOR_IMAGE=${BAREMETAL_OPERATOR_IMAGE:-"quay.io/metal3-io/baremetal-operator"}
 
