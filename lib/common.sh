@@ -203,7 +203,10 @@ export KIND_VERSION=${KIND_VERSION:-"v0.10.0"}
 export KIND_NODE_IMAGE_VERSION=${KIND_NODE_IMAGE_VERSION:-"v1.20.2"}
 
 # Minikube version (if EPHEMERAL_CLUSTER=minikube)
-export MINIKUBE_VERSION=${MINIKUBE_VERSION:-"v1.20.0"}
+export MINIKUBE_VERSION=${MINIKUBE_VERSION:-"v0.33.1"}
+
+# KVM2 version (if EPHEMERAL_CLUSTER=minikube)
+export DOCKER_MACHINE_DRIVER_KVM2=${DOCKER_MACHINE_DRIVER_KVM2:-"v0.31.0"}
 
 # Test and verification related variables
 SKIP_RETRIES="${SKIP_RETRIES:-false}"

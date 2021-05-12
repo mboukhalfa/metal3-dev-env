@@ -78,7 +78,7 @@ if [ "${EPHEMERAL_CLUSTER}" == "minikube" ]; then
   fi
 
   if ! command -v docker-machine-driver-kvm2 2>/dev/null ; then
-      curl -LO https://storage.googleapis.com/minikube/releases/"${MINIKUBE_VERSION}"/docker-machine-driver-kvm2
+      curl -LO https://storage.googleapis.com/minikube/releases/"${DOCKER_MACHINE_DRIVER_KVM2}"/docker-machine-driver-kvm2
       chmod +x docker-machine-driver-kvm2
       sudo mv docker-machine-driver-kvm2 /usr/local/bin/.
   fi
@@ -192,6 +192,7 @@ function configure_minikube() {
     minikube config set vm-driver kvm2
     minikube config set memory 4096
 }
+
 if [ "${EPHEMERAL_CLUSTER}" == "minikube" ]; then
   configure_minikube
   init_minikube

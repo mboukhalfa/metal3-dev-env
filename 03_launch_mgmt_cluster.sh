@@ -432,6 +432,18 @@ function start_management_cluster () {
   if [ "${EPHEMERAL_CLUSTER}" == "kind" ]; then
     launch_kind
   elif [ "${EPHEMERAL_CLUSTER}" == "minikube" ]; then
+    # # This a temporary workaround to fix minikube start failure in CentOS builds.
+    # # For now, if we wait long enough, the lease expires and the VM re-registers, 
+    # # then its IP address is visible in 'virsh net-dhcp-leases mk-minikube'.
+    # # Proper fix would be either upgrade libvirtd or fix it upstream in minikube.
+    # # shellcheck disable=SC2034
+    # for i in {1..3}; do
+    #   sudo su -l -c "minikube delete" "${USER}"
+    #   sudo su -l -c "minikube start" "${USER}"
+    #   sudo systemctl restart libvirtd
+    # done
+
+    #configure_minikube
     init_minikube
 
     sudo su -l -c 'minikube start' "${USER}"
