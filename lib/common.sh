@@ -48,6 +48,8 @@ export DISTRO="${ID}${VERSION_ID%.*}"
 export OS="${ID}"
 export OS_VERSION_ID=$VERSION_ID
 export SUPPORTED_DISTROS=(centos8 rhel8 ubuntu18 ubuntu20)
+# Enable ironic restart feature when the TLS certificate is updated
+export RESTART_CONTAINER_CERTIFICATE_UPDATED=${RESTART_CONTAINER_CERTIFICATE_UPDATED:-${IRONIC_TLS_SETUP}}
 
 if [[ ! "${SUPPORTED_DISTROS[*]}" =~ $DISTRO ]]; then
    echo "Supported OS distros for the host are: CentOS8 or RHEL8 or Ubuntu20.04"
